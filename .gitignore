@@ -15,3 +15,5 @@ go.work.sum
 
 # Project specific ignores
 sqlite-tui-prd.md
+todo.md
+
