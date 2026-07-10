@@ -1,0 +1,17 @@
+# Binaries and executables
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+
+# Go workspace & coverage
+*.test
+*.out
+go.work
+go.work.sum
+
+# Project specific ignores
+sqlite-tui-prd.md
