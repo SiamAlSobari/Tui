@@ -47,6 +47,11 @@ func main() {
 	// 3. Initialize TUI model and populate tables
 	m := tui.NewModel(client)
 	m.Sidebar.SetTables(tables)
+	var tableNames []string
+	for _, t := range tables {
+		tableNames = append(tableNames, t.Name)
+	}
+	m.Editor.TableNames = tableNames
 
 	// 4. Run Bubble Tea Program with AltScreen enabled for full screen interactive UI
 	p := tea.NewProgram(m, tea.WithAltScreen())

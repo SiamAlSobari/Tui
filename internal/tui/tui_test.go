@@ -189,3 +189,24 @@ func TestTUIQueryExecutionError(t *testing.T) {
 		t.Errorf("expected error status message, got %q", m.StatusMessage)
 	}
 }
+
+func TestEditorAutocomplete(t *testing.T) {
+	ed := components.NewEditor()
+	ed.TableNames = []string{"users", "posts"}
+
+	// Type "SEL"
+	ed.Input.SetValue("SEL")
+	ed.Input.SetCursor(3)
+
+	// Verify suggestion lists "SELECT"
+	s := ed.View()
+	if !strings.Contains(s, "SELECT") {
+		t.Errorf("expected suggestions to contain 'SELECT', got %q", s)
+	}
+
+	// Trigger autocomplete using Ctrl+L
+	ed, _ = ed.Update(tea.KeyMsg{Type: tea.KeyCtrlL})
+	if ed.Input.Value() != "SELECT" {
+		t.Errorf("expected completed value 'SELECT', got %q", ed.Input.Value())
+	}
+}
