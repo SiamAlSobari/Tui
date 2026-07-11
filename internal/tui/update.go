@@ -3,6 +3,7 @@ package tui
 import (
 	"tui-sqlite/internal/tui/components"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -14,7 +15,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Width = msg.Width
 		m.Height = msg.Height
 
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		m.Spinner, cmd = m.Spinner.Update(msg)
+		return m, cmd
+
 	case LoadTableDataMsg:
+		m.Loading = false
 		if msg.Err == nil {
 			m.Grid.SetData(msg.Headers, msg.Rows, msg.TotalRows)
 			m.Grid.ActiveTable = msg.TableName
@@ -22,6 +29,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case LoadSchemaMsg:
+		m.Loading = false
 		if msg.Err == nil {
 			m.Grid.SchemaCols = msg.Columns
 			m.Grid.SchemaDDL = msg.DDL
@@ -30,13 +38,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case components.PageChangedMsg:
+		m.Loading = true
 		return m, loadTableDataCmd(m.DB, m.Grid.ActiveTable, msg.Page, m.Grid.PageSize)
 
 	case components.RunQueryMsg:
+		m.Loading = true
 		m.StatusMessage = "Executing query..."
 		return m, runQueryCmd(m.DB, msg.SQL)
 
 	case RunQueryResultMsg:
+		m.Loading = false
 		if msg.Err != nil {
 			m.StatusMessage = "SQL Error: " + msg.Err.Error()
 		} else {
@@ -95,6 +106,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.Grid.ScrollOffset = 0
 					m.Grid.SchemaMode = false
 					m.ActiveTab = GridTab
+					m.Loading = true
 					return m, loadTableDataCmd(m.DB, selTable, 1, m.Grid.PageSize)
 				}
 			}
@@ -110,6 +122,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if selTable != "" {
 					m.Grid.ActiveTable = selTable
 					m.Grid.SchemaMode = !m.Grid.SchemaMode
+					m.Loading = true
 					if m.Grid.SchemaMode {
 						m.ActiveTab = GridTab
 						return m, loadSchemaCmd(m.DB, selTable)

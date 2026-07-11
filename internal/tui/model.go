@@ -5,6 +5,7 @@ import (
 	"tui-sqlite/internal/db"
 	"tui-sqlite/internal/tui/components"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -24,9 +25,13 @@ type Model struct {
 	Grid          components.GridModel
 	Editor        components.EditorModel
 	StatusMessage string
+	Loading       bool
+	Spinner       spinner.Model
 }
 
 func NewModel(client *db.DBClient) Model {
+	s := spinner.New()
+	s.Spinner = spinner.Dot
 	return Model{
 		DB:            client,
 		ActiveTab:     SidebarTab,
@@ -34,15 +39,19 @@ func NewModel(client *db.DBClient) Model {
 		Grid:          components.NewGrid(),
 		Editor:        components.NewEditor(),
 		StatusMessage: "",
+		Loading:       false,
+		Spinner:       s,
 	}
 }
 
 func (m Model) Init() tea.Cmd {
+	var cmds []tea.Cmd
+	cmds = append(cmds, m.Spinner.Tick)
 	if len(m.Sidebar.Tables) > 0 {
 		firstTable := m.Sidebar.Tables[0].Name
-		return loadTableDataCmd(m.DB, firstTable, 1, 50)
+		cmds = append(cmds, loadTableDataCmd(m.DB, firstTable, 1, 50))
 	}
-	return nil
+	return tea.Batch(cmds...)
 }
 
 type LoadTableDataMsg struct {

@@ -83,7 +83,13 @@ func (m Model) View() string {
 
 	footerContent := footerText
 	if m.StatusMessage != "" {
-		footerContent = fmt.Sprintf(" Status: %s\n%s", m.StatusMessage, footerText)
+		spinnerPrefix := ""
+		if m.Loading {
+			spinnerPrefix = m.Spinner.View() + " "
+		}
+		footerContent = fmt.Sprintf(" Status: %s%s\n%s", spinnerPrefix, m.StatusMessage, footerText)
+	} else if m.Loading {
+		footerContent = fmt.Sprintf(" Status: %s Loading...\n%s", m.Spinner.View(), footerText)
 	}
 	footer := styles.FooterStyle.Render(footerContent)
 
