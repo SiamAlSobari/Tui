@@ -46,9 +46,10 @@ func main() {
 		dbPath = flag.Arg(0)
 	}
 
-	if dbPath == "" {
-		fmt.Println("Usage: tui-sqlite [-ro] <database-path>")
-		fmt.Println("Options:")
+	if dbPath == "" || flag.NArg() > 1 {
+		fmt.Fprintln(os.Stderr, "Usage: tui-sqlite [-ro] <database-path>")
+		fmt.Fprintln(os.Stderr, "Options:")
+		flag.CommandLine.SetOutput(os.Stderr)
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
@@ -60,7 +61,7 @@ func main() {
 
 	p := tea.NewProgram(m)
 	if _, err := p.Run(); err != nil {
-		fmt.Printf("Alas, there's been an error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Alas, there's been an error: %v\n", err)
 		os.Exit(1)
 	}
 }
