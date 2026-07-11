@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 	"tui-sqlite/internal/db"
 	"tui-sqlite/internal/tui/components"
@@ -143,5 +145,47 @@ func TestTUIWindowSize(t *testing.T) {
 	view := m.View()
 	if view == "Initializing layout..." {
 		t.Error("expected view to render layout, but got initialization message")
+	}
+}
+
+func TestTUIQueryExecution(t *testing.T) {
+	m := NewModel(nil)
+
+	// Simulate RunQueryMsg
+	res, _ := m.Update(components.RunQueryMsg{SQL: "SELECT 1"})
+	m = res.(Model)
+	if m.StatusMessage != "Executing query..." {
+		t.Errorf("expected executing status, got %q", m.StatusMessage)
+	}
+
+	// Simulate RunQueryResultMsg success
+	headers := []string{"num"}
+	rows := [][]string{{"1"}}
+	res, _ = m.Update(RunQueryResultMsg{Headers: headers, Rows: rows})
+	m = res.(Model)
+
+	if m.Grid.ActiveTable != "Custom Query" {
+		t.Errorf("expected Grid table to be 'Custom Query', got %q", m.Grid.ActiveTable)
+	}
+	if len(m.Grid.Headers) != 1 || m.Grid.Headers[0] != "num" {
+		t.Errorf("unexpected headers in grid: %v", m.Grid.Headers)
+	}
+	if len(m.Grid.Rows) != 1 || m.Grid.Rows[0][0] != "1" {
+		t.Errorf("unexpected rows in grid: %v", m.Grid.Rows)
+	}
+	if !strings.Contains(m.StatusMessage, "successfully") {
+		t.Errorf("expected success status message, got %q", m.StatusMessage)
+	}
+}
+
+func TestTUIQueryExecutionError(t *testing.T) {
+	m := NewModel(nil)
+
+	// Simulate error result
+	res, _ := m.Update(RunQueryResultMsg{Err: fmt.Errorf("syntax error")})
+	m = res.(Model)
+
+	if !strings.Contains(m.StatusMessage, "SQL Error: syntax error") {
+		t.Errorf("expected error status message, got %q", m.StatusMessage)
 	}
 }

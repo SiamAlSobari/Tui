@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"tui-sqlite/internal/db"
 	"tui-sqlite/internal/tui/components"
 
@@ -22,15 +23,17 @@ type Model struct {
 	Sidebar       components.SidebarModel
 	Grid          components.GridModel
 	Editor        components.EditorModel
+	StatusMessage string
 }
 
 func NewModel(client *db.DBClient) Model {
 	return Model{
-		DB:        client,
-		ActiveTab: SidebarTab,
-		Sidebar:   components.NewSidebar(),
-		Grid:      components.NewGrid(),
-		Editor:    components.NewEditor(),
+		DB:            client,
+		ActiveTab:     SidebarTab,
+		Sidebar:       components.NewSidebar(),
+		Grid:          components.NewGrid(),
+		Editor:        components.NewEditor(),
+		StatusMessage: "",
 	}
 }
 
@@ -102,6 +105,28 @@ func loadSchemaCmd(client *db.DBClient, tableName string) tea.Cmd {
 			TableName: tableName,
 			Columns:   cols,
 			DDL:       ddl,
+		}
+	}
+}
+
+type RunQueryResultMsg struct {
+	Headers []string
+	Rows    [][]string
+	Err     error
+}
+
+func runQueryCmd(client *db.DBClient, sqlQuery string) tea.Cmd {
+	return func() tea.Msg {
+		if client == nil {
+			return RunQueryResultMsg{Err: fmt.Errorf("no database connection")}
+		}
+		cols, rows, err := db.ExecuteSQL(client, sqlQuery)
+		if err != nil {
+			return RunQueryResultMsg{Err: err}
+		}
+		return RunQueryResultMsg{
+			Headers: cols,
+			Rows:    rows,
 		}
 	}
 }

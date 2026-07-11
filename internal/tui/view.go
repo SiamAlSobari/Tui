@@ -59,7 +59,7 @@ func (m Model) View() string {
 	// Render Right Panel Content
 	var rightViewContent string
 	if m.ActiveTab == EditorTab {
-		rightViewContent = "Query Editor (Phase 4 query execution placeholder)"
+		rightViewContent = m.Editor.View()
 	} else {
 		rightViewContent = m.Grid.View()
 	}
@@ -74,13 +74,18 @@ func (m Model) View() string {
 	case SidebarTab:
 		footerText = " [Tab] Focus Grid | [/] Filter | [j/k] Navigate | [q] Quit"
 	case GridTab:
-		footerText = " [Tab] Focus Editor | [h/l] Scroll Cols | [PgUp/PgDn] Paging | [q] Quit"
+		footerText = " [Tab] Focus Editor | [c] Copy CSV | [h/l] Scroll Cols | [PgUp/PgDn] Paging | [q] Quit"
 	case EditorTab:
-		footerText = " [Tab] Focus Sidebar | [Ctrl+Enter] Run Query | [q] Quit"
+		footerText = " [Tab] Focus Sidebar | [Ctrl+J/Ctrl+Enter] Run Query | [q] Quit"
 	default:
 		footerText = " [Tab] Switch Panels | [q] Quit"
 	}
-	footer := styles.FooterStyle.Render(footerText)
+
+	footerContent := footerText
+	if m.StatusMessage != "" {
+		footerContent = fmt.Sprintf(" Status: %s\n%s", m.StatusMessage, footerText)
+	}
+	footer := styles.FooterStyle.Render(footerContent)
 
 	// Combine vertically
 	return lipgloss.JoinVertical(lipgloss.Left, header, body, footer)

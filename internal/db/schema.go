@@ -170,3 +170,71 @@ func QueryTablePage(client *DBClient, tableName string, limit, offset int) ([]st
 
 	return cols, result, nil
 }
+
+func ExecuteSQL(client *DBClient, sqlQuery string) ([]string, [][]string, error) {
+	trimmed := strings.ToLower(strings.TrimSpace(sqlQuery))
+	isQuery := strings.HasPrefix(trimmed, "select") ||
+		strings.HasPrefix(trimmed, "explain") ||
+		strings.HasPrefix(trimmed, "pragma") ||
+		strings.HasPrefix(trimmed, "with") ||
+		strings.HasPrefix(trimmed, "show")
+
+	if isQuery {
+		rows, err := client.DB.Query(sqlQuery)
+		if err != nil {
+			return nil, nil, err
+		}
+		defer rows.Close()
+
+		cols, err := rows.Columns()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		vals := make([]interface{}, len(cols))
+		valPtrs := make([]interface{}, len(cols))
+		for i := range vals {
+			valPtrs[i] = &vals[i]
+		}
+
+		var result [][]string
+		for rows.Next() {
+			if err := rows.Scan(valPtrs...); err != nil {
+				return nil, nil, err
+			}
+
+			row := make([]string, len(cols))
+			for i, val := range vals {
+				if val == nil {
+					row[i] = "NULL"
+				} else {
+					switch v := val.(type) {
+					case []byte:
+						row[i] = string(v)
+					default:
+						row[i] = fmt.Sprintf("%v", v)
+					}
+				}
+			}
+			result = append(result, row)
+		}
+
+		if err := rows.Err(); err != nil {
+			return nil, nil, err
+		}
+
+		return cols, result, nil
+	} else {
+		res, err := client.DB.Exec(sqlQuery)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		rowsAffected, _ := res.RowsAffected()
+		cols := []string{"Result"}
+		result := [][]string{
+			{fmt.Sprintf("Query executed successfully. Rows affected: %d", rowsAffected)},
+		}
+		return cols, result, nil
+	}
+}

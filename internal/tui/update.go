@@ -32,6 +32,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case components.PageChangedMsg:
 		return m, loadTableDataCmd(m.DB, m.Grid.ActiveTable, msg.Page, m.Grid.PageSize)
 
+	case components.RunQueryMsg:
+		m.StatusMessage = "Executing query..."
+		return m, runQueryCmd(m.DB, msg.SQL)
+
+	case RunQueryResultMsg:
+		if msg.Err != nil {
+			m.StatusMessage = "SQL Error: " + msg.Err.Error()
+		} else {
+			m.Grid.SetData(msg.Headers, msg.Rows, len(msg.Rows))
+			m.Grid.ActiveTable = "Custom Query"
+			m.Grid.CurrentPage = 1
+			m.Grid.ScrollOffset = 0
+			m.Grid.SchemaMode = false
+			m.StatusMessage = "Query executed successfully!"
+		}
+		return m, nil
+
+	case components.StatusMsg:
+		m.StatusMessage = msg.Message
+		return m, nil
+
 	case tea.KeyMsg:
 		// If sidebar has active filter input, it intercepts keys first
 		if m.ActiveTab == SidebarTab && m.Sidebar.FilterActive {

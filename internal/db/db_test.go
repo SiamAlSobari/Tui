@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -176,5 +177,29 @@ func TestDatabase_Operations(t *testing.T) {
 		if dataRows[1][1] != "bob@example.com" || dataRows[1][2] != "0" {
 			t.Errorf("unexpected data in second row: %v", dataRows[1])
 		}
+	}
+
+	// 5. Test ExecuteSQL
+	qCols, qRows, err := ExecuteSQL(client, "SELECT email FROM users ORDER BY email ASC")
+	if err != nil {
+		t.Fatalf("ExecuteSQL select failed: %v", err)
+	}
+	if len(qCols) != 1 || qCols[0] != "email" {
+		t.Errorf("expected column 'email', got %v", qCols)
+	}
+	if len(qRows) != 2 || qRows[0][0] != "alice@example.com" || qRows[1][0] != "bob@example.com" {
+		t.Errorf("unexpected rows from ExecuteSQL: %v", qRows)
+	}
+
+	// Non-select query
+	execCols, execRows, err := ExecuteSQL(client, "INSERT INTO users (email, active) VALUES ('charlie@example.com', 1)")
+	if err != nil {
+		t.Fatalf("ExecuteSQL insert failed: %v", err)
+	}
+	if len(execCols) != 1 || execCols[0] != "Result" {
+		t.Errorf("expected header 'Result', got %v", execCols)
+	}
+	if len(execRows) != 1 || !strings.Contains(execRows[0][0], "Query executed successfully") {
+		t.Errorf("unexpected exec result: %v", execRows)
 	}
 }

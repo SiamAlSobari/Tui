@@ -4,12 +4,18 @@ import (
 	"fmt"
 	"strings"
 	"tui-sqlite/internal/db"
+	"tui-sqlite/internal/export"
 
+	"github.com/atotto/clipboard"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type PageChangedMsg struct {
 	Page int
+}
+
+type StatusMsg struct {
+	Message string
 }
 
 type GridModel struct {
@@ -90,6 +96,18 @@ func (m GridModel) Update(msg tea.Msg) (GridModel, tea.Cmd) {
 				m.CurrentPage--
 				return m, func() tea.Msg {
 					return PageChangedMsg{Page: m.CurrentPage}
+				}
+			}
+		case "c":
+			if len(m.Headers) > 0 {
+				csvStr := export.ToCSV(m.Headers, m.Rows)
+				err := clipboard.WriteAll(csvStr)
+				msgText := "Table copied to clipboard as CSV!"
+				if err != nil {
+					msgText = "Error copying: " + err.Error()
+				}
+				return m, func() tea.Msg {
+					return StatusMsg{Message: msgText}
 				}
 			}
 		}
