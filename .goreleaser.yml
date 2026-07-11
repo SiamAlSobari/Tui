@@ -1,7 +1,7 @@
 # GoReleaser Configuration
 # https://goreleaser.com
 
-project_name: sqlite-tui
+project_name: dbbee
 
 before:
   hooks:
@@ -17,8 +17,8 @@ builds:
     goarch:
       - amd64
       - arm64
-    main: ./cmd/tui-sqlite/main.go
-    binary: sqlite-tui
+    main: ./cmd/dbbee/main.go
+    binary: dbbee
 
 archives:
   - format: tar.gz

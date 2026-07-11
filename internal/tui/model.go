@@ -2,8 +2,8 @@ package tui
 
 import (
 	"fmt"
-	"tui-sqlite/internal/db"
-	"tui-sqlite/internal/tui/components"
+	"dbbee/internal/db"
+	"dbbee/internal/tui/components"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"

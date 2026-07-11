@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"tui-sqlite/internal/db"
-	"tui-sqlite/internal/tui"
+	"dbbee/internal/db"
+	"dbbee/internal/tui"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

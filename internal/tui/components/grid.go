@@ -3,8 +3,8 @@ package components
 import (
 	"fmt"
 	"strings"
-	"tui-sqlite/internal/db"
-	"tui-sqlite/internal/export"
+	"dbbee/internal/db"
+	"dbbee/internal/export"
 
 	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/bubbles/textinput"

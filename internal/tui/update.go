@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"tui-sqlite/internal/tui/components"
+	"dbbee/internal/tui/components"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"

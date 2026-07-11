@@ -1,4 +1,4 @@
-module tui-sqlite
+module dbbee
 
 go 1.26.5
 

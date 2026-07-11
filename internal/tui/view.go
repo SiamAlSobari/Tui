@@ -2,7 +2,7 @@ package tui
 
 import (
 	"fmt"
-	"tui-sqlite/internal/tui/styles"
+	"dbbee/internal/tui/styles"
 
 	"github.com/charmbracelet/lipgloss"
 )

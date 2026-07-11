@@ -3,7 +3,7 @@ package components
 import (
 	"fmt"
 	"strings"
-	"tui-sqlite/internal/db"
+	"dbbee/internal/db"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"

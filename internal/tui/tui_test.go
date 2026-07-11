@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"tui-sqlite/internal/db"
-	"tui-sqlite/internal/tui/components"
+	"dbbee/internal/db"
+	"dbbee/internal/tui/components"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
