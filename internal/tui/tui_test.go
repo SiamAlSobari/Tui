@@ -124,3 +124,24 @@ func TestSidebarNavigation(t *testing.T) {
 		t.Errorf("expected ActiveIndex to be 1 on Down arrow, got %d", sb.ActiveIndex)
 	}
 }
+
+func TestTUIWindowSize(t *testing.T) {
+	m := NewModel(nil)
+	if m.Width != 0 || m.Height != 0 {
+		t.Errorf("expected initial dimensions to be 0, got %dx%d", m.Width, m.Height)
+	}
+
+	// Sending a WindowSizeMsg
+	res, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	m = res.(Model)
+
+	if m.Width != 80 || m.Height != 24 {
+		t.Errorf("expected dimensions to update to 80x24, got %dx%d", m.Width, m.Height)
+	}
+
+	// Verify view does not return initialization message anymore
+	view := m.View()
+	if view == "Initializing layout..." {
+		t.Error("expected view to render layout, but got initialization message")
+	}
+}

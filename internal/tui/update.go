@@ -8,6 +8,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.Width = msg.Width
+		m.Height = msg.Height
+		// We don't return early because we also want to propagate size updates to components if needed.
+
 	case tea.KeyMsg:
 		// If sidebar has active filter input, it intercepts keys first
 		if m.ActiveTab == SidebarTab && m.Sidebar.FilterActive {
