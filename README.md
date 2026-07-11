@@ -66,7 +66,16 @@ cd Tui
 go build -o bin/dbbee ./cmd/dbbee
 ```
 
-### Install Globally
+### Install Globally (Go Developers)
+
+Anyone who has the Go toolchain installed can install `dbbee` globally with a single command:
+
+```bash
+go install github.com/SiamAlSobari/dbbee/cmd/dbbee@latest
+```
+
+Alternatively, to install from the local repository directory:
+
 ```bash
 go install ./cmd/dbbee
 ```
