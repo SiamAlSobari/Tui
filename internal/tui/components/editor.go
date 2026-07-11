@@ -100,9 +100,12 @@ func (m EditorModel) Update(msg tea.Msg) (EditorModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+d", "ctrl+enter", "ctrl+j":
+		case "ctrl+d", "ctrl+enter", "ctrl+j", "ctrl+e":
 			sqlText := m.Input.Value()
 			if strings.TrimSpace(sqlText) != "" {
+				if msg.String() == "ctrl+e" {
+					sqlText = "EXPLAIN QUERY PLAN " + sqlText
+				}
 				if len(m.History) == 0 || m.History[len(m.History)-1] != sqlText {
 					m.History = append(m.History, sqlText)
 				}

@@ -210,3 +210,22 @@ func TestEditorAutocomplete(t *testing.T) {
 		t.Errorf("expected completed value 'SELECT', got %q", ed.Input.Value())
 	}
 }
+
+func TestEditorExplainQueryPlan(t *testing.T) {
+	ed := components.NewEditor()
+	ed.Input.SetValue("SELECT * FROM users")
+
+	// Trigger explain plan using Ctrl+E
+	ed, cmd := ed.Update(tea.KeyMsg{Type: tea.KeyCtrlE})
+	if cmd == nil {
+		t.Fatal("expected a command to be returned for execution")
+	}
+	msg := cmd()
+	runMsg, ok := msg.(components.RunQueryMsg)
+	if !ok {
+		t.Fatalf("expected RunQueryMsg, got %T", msg)
+	}
+	if runMsg.SQL != "EXPLAIN QUERY PLAN SELECT * FROM users" {
+		t.Errorf("expected SQL to be prepended with EXPLAIN QUERY PLAN, got %q", runMsg.SQL)
+	}
+}
