@@ -156,4 +156,25 @@ func TestDatabase_Operations(t *testing.T) {
 	if ddl == "" {
 		t.Error("expected non-empty DDL statement")
 	}
+
+	// 4. Test QueryTablePage
+	colsList, dataRows, err := QueryTablePage(client, "users", 10, 0)
+	if err != nil {
+		t.Fatalf("failed to query table page: %v", err)
+	}
+
+	if len(colsList) != 3 || colsList[0] != "id" || colsList[1] != "email" || colsList[2] != "active" {
+		t.Errorf("expected columns [id, email, active], got %v", colsList)
+	}
+
+	if len(dataRows) != 2 {
+		t.Errorf("expected 2 rows, got %d", len(dataRows))
+	} else {
+		if dataRows[0][1] != "alice@example.com" || dataRows[0][2] != "1" {
+			t.Errorf("unexpected data in first row: %v", dataRows[0])
+		}
+		if dataRows[1][1] != "bob@example.com" || dataRows[1][2] != "0" {
+			t.Errorf("unexpected data in second row: %v", dataRows[1])
+		}
+	}
 }

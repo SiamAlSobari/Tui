@@ -52,17 +52,16 @@ func (m Model) View() string {
 	// Render Sidebar View
 	sidebarView := sidebarBorder.Render(m.Sidebar.View())
 
+	// Set grid boundaries so auto-column calculation and pagination fit correctly
+	m.Grid.Width = rightWidth
+	m.Grid.Height = bodyHeight
+
 	// Render Right Panel Content
 	var rightViewContent string
-	switch m.ActiveTab {
-	case SidebarTab:
-		rightViewContent = "Sidebar Focused\nUse arrows/j/k to select a table,\npress '/' to filter."
-	case GridTab:
-		rightViewContent = "Grid Viewer (Press Tab to navigate)"
-	case EditorTab:
-		rightViewContent = "Query Editor (Press Tab to navigate)"
-	default:
-		rightViewContent = "Main Area Content"
+	if m.ActiveTab == EditorTab {
+		rightViewContent = "Query Editor (Phase 4 query execution placeholder)"
+	} else {
+		rightViewContent = m.Grid.View()
 	}
 	rightView := rightPanelBorder.Render(rightViewContent)
 

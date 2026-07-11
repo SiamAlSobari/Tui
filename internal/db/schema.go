@@ -121,3 +121,52 @@ func GetTableSchema(client *DBClient, tableName string) ([]ColumnInfo, string, e
 
 	return columns, ddl, nil
 }
+
+func QueryTablePage(client *DBClient, tableName string, limit, offset int) ([]string, [][]string, error) {
+	query := fmt.Sprintf(`SELECT * FROM "%s" LIMIT ? OFFSET ?`, escapeDoubleQuotes(tableName))
+	rows, err := client.DB.Query(query, limit, offset)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to query table data: %w", err)
+	}
+	defer rows.Close()
+
+	cols, err := rows.Columns()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get columns: %w", err)
+	}
+
+	// Dynamic scanning setup
+	vals := make([]interface{}, len(cols))
+	valPtrs := make([]interface{}, len(cols))
+	for i := range vals {
+		valPtrs[i] = &vals[i]
+	}
+
+	var result [][]string
+	for rows.Next() {
+		if err := rows.Scan(valPtrs...); err != nil {
+			return nil, nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+
+		row := make([]string, len(cols))
+		for i, val := range vals {
+			if val == nil {
+				row[i] = "NULL"
+			} else {
+				switch v := val.(type) {
+				case []byte:
+					row[i] = string(v)
+				default:
+					row[i] = fmt.Sprintf("%v", v)
+				}
+			}
+		}
+		result = append(result, row)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, nil, fmt.Errorf("row iteration error: %w", err)
+	}
+
+	return cols, result, nil
+}
