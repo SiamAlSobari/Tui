@@ -5,36 +5,11 @@ import (
 	"fmt"
 	"os"
 
+	"tui-sqlite/internal/db"
+	"tui-sqlite/internal/tui"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
-
-type model struct {
-	dbPath   string
-	readOnly bool
-}
-
-func (m model) Init() tea.Cmd {
-	return nil
-}
-
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c":
-			return m, tea.Quit
-		}
-	}
-	return m, nil
-}
-
-func (m model) View() string {
-	mode := "read-write"
-	if m.readOnly {
-		mode = "read-only"
-	}
-	return fmt.Sprintf("TuiSqlite v1.0.0\nDatabase: %s (%s)\n\nPress 'q' to quit.\n", m.dbPath, mode)
-}
 
 func main() {
 	dbFlag := flag.String("db", "", "Path to SQLite database file")
@@ -54,12 +29,27 @@ func main() {
 		os.Exit(1)
 	}
 
-	m := model{
-		dbPath:   dbPath,
-		readOnly: *roFlag,
+	// 1. Open database connection
+	client, err := db.OpenConnection(dbPath, *roFlag)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error opening database: %v\n", err)
+		os.Exit(1)
+	}
+	defer client.Close()
+
+	// 2. Fetch tables list
+	tables, err := db.ListTables(client)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error listing database tables: %v\n", err)
+		os.Exit(1)
 	}
 
-	p := tea.NewProgram(m)
+	// 3. Initialize TUI model and populate tables
+	m := tui.NewModel(client)
+	m.Sidebar.SetTables(tables)
+
+	// 4. Run Bubble Tea Program with AltScreen enabled for full screen interactive UI
+	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Alas, there's been an error: %v\n", err)
 		os.Exit(1)
