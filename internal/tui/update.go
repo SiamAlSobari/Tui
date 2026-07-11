@@ -64,6 +64,46 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.StatusMessage = msg.Message
 		return m, nil
 
+	case RefreshTableMsg:
+		m.StatusMessage = "Database updated successfully"
+		m.Loading = true
+		return m, loadTableDataCmd(m.DB, msg.TableName, m.Grid.CurrentPage, m.Grid.PageSize)
+
+	case components.DeleteRowMsg:
+		if m.DB.ReadOnly {
+			m.StatusMessage = "Error: Database is opened in read-only mode"
+			return m, nil
+		}
+		if msg.RowIndex < 0 || msg.RowIndex >= len(m.Grid.Rows) {
+			return m, nil
+		}
+		row := m.Grid.Rows[msg.RowIndex]
+		m.Loading = true
+		m.StatusMessage = "Deleting row..."
+		return m, deleteRowCmd(m.DB, m.Grid.ActiveTable, m.Grid.Headers, row)
+
+	case components.CreateRowMsg:
+		if m.DB.ReadOnly {
+			m.StatusMessage = "Error: Database is opened in read-only mode"
+			return m, nil
+		}
+		m.Loading = true
+		m.StatusMessage = "Creating row..."
+		return m, createRowCmd(m.DB, m.Grid.ActiveTable, m.Grid.Headers)
+
+	case components.UpdateCellMsg:
+		if m.DB.ReadOnly {
+			m.StatusMessage = "Error: Database is opened in read-only mode"
+			return m, nil
+		}
+		if msg.RowIndex < 0 || msg.RowIndex >= len(m.Grid.Rows) {
+			return m, nil
+		}
+		row := m.Grid.Rows[msg.RowIndex]
+		m.Loading = true
+		m.StatusMessage = "Updating cell..."
+		return m, updateCellCmd(m.DB, m.Grid.ActiveTable, m.Grid.Headers, row, msg.ColIndex, msg.Value)
+
 	case tea.KeyMsg:
 		// If sidebar has active filter input, it intercepts keys first
 		if m.ActiveTab == SidebarTab && m.Sidebar.FilterActive {
@@ -137,6 +177,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	// Propagate updates to the active component
+	m.Grid.Focused = (m.ActiveTab == GridTab)
+
 	switch m.ActiveTab {
 	case SidebarTab:
 		var cmd tea.Cmd

@@ -11,8 +11,9 @@ import (
 )
 
 type DBClient struct {
-	DB   *sql.DB
-	Path string
+	DB       *sql.DB
+	Path     string
+	ReadOnly bool
 }
 
 func OpenConnection(path string, readOnly bool) (*DBClient, error) {
@@ -38,11 +39,13 @@ func OpenConnection(path string, readOnly bool) (*DBClient, error) {
 
 	var db *sql.DB
 	var openErr error
+	isReadOnly := false
 
 	// If readOnly is requested, try to open in read-only mode first.
 	if readOnly {
 		dsn := fmt.Sprintf("file:%s?mode=ro", filepath.ToSlash(path))
 		db, openErr = sql.Open("sqlite", dsn)
+		isReadOnly = true
 	} else {
 		// Try read-write mode first.
 		db, openErr = sql.Open("sqlite", path)
@@ -56,6 +59,7 @@ func OpenConnection(path string, readOnly bool) (*DBClient, error) {
 				db, openErr = sql.Open("sqlite", dsn)
 				if openErr == nil {
 					openErr = db.Ping()
+					isReadOnly = true
 				}
 			}
 		}
@@ -69,8 +73,9 @@ func OpenConnection(path string, readOnly bool) (*DBClient, error) {
 	}
 
 	return &DBClient{
-		DB:   db,
-		Path: path,
+		DB:       db,
+		Path:     path,
+		ReadOnly: isReadOnly,
 	}, nil
 }
 

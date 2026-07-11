@@ -40,21 +40,27 @@ func TestGridHorizontalScrolling(t *testing.T) {
 		{"a", "b", "c", "d"},
 	}
 	g.SetData(headers, rows, 1)
-	g.Width = 30 // Set a small container width
+	g.Width = 10 // Set a very small width so only 1 column fits at a time
 
 	// Initially horizontal offset is 0
 	if g.ScrollOffset != 0 {
 		t.Errorf("expected initial ScrollOffset to be 0, got %d", g.ScrollOffset)
 	}
 
-	// Press 'l' or Right arrow to scroll right
+	// Press 'l' or Right arrow to scroll right (active col goes to 1, forces ScrollOffset to 1)
 	g, _ = g.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("l")})
+	if g.ActiveColIndex != 1 {
+		t.Errorf("expected ActiveColIndex to be 1, got %d", g.ActiveColIndex)
+	}
 	if g.ScrollOffset != 1 {
 		t.Errorf("expected ScrollOffset to be 1 after scrolling right, got %d", g.ScrollOffset)
 	}
 
-	// Press 'h' or Left arrow to scroll left
+	// Press 'h' or Left arrow to scroll left (active col goes to 0, forces ScrollOffset to 0)
 	g, _ = g.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("h")})
+	if g.ActiveColIndex != 0 {
+		t.Errorf("expected ActiveColIndex to be 0, got %d", g.ActiveColIndex)
+	}
 	if g.ScrollOffset != 0 {
 		t.Errorf("expected ScrollOffset to return to 0 after scrolling left, got %d", g.ScrollOffset)
 	}
@@ -91,5 +97,75 @@ func TestGridPagination(t *testing.T) {
 	g, _ = g.Update(tea.KeyMsg{Type: tea.KeyPgUp})
 	if g.CurrentPage != 2 {
 		t.Errorf("expected page 2 after PgUp, got %d", g.CurrentPage)
+	}
+}
+
+func TestGridRowColSelection(t *testing.T) {
+	g := NewGrid()
+	headers := []string{"id", "val"}
+	rows := [][]string{
+		{"1", "a"},
+		{"2", "b"},
+	}
+	g.SetData(headers, rows, 2)
+
+	if g.ActiveRowIndex != 0 || g.ActiveColIndex != 0 {
+		t.Errorf("expected initial row/col selection to be 0/0, got %d/%d", g.ActiveRowIndex, g.ActiveColIndex)
+	}
+
+	// Press 'j' (Vim down) -> active row becomes 1
+	g, _ = g.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+	if g.ActiveRowIndex != 1 {
+		t.Errorf("expected active row 1 after 'j', got %d", g.ActiveRowIndex)
+	}
+
+	// Press 'l' (Vim right) -> active col becomes 1
+	g, _ = g.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("l")})
+	if g.ActiveColIndex != 1 {
+		t.Errorf("expected active col 1 after 'l', got %d", g.ActiveColIndex)
+	}
+
+	// Press 'k' (Vim up) -> active row returns to 0
+	g, _ = g.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("k")})
+	if g.ActiveRowIndex != 0 {
+		t.Errorf("expected active row 0 after 'k', got %d", g.ActiveRowIndex)
+	}
+
+	// Press 'h' (Vim left) -> active col returns to 0
+	g, _ = g.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("h")})
+	if g.ActiveColIndex != 0 {
+		t.Errorf("expected active col 0 after 'h', got %d", g.ActiveColIndex)
+	}
+}
+
+func TestGridRowDeletion(t *testing.T) {
+	g := NewGrid()
+	headers := []string{"id", "val"}
+	rows := [][]string{{"1", "a"}}
+	g.SetData(headers, rows, 1)
+
+	if g.ConfirmDelete {
+		t.Error("expected ConfirmDelete to be false initially")
+	}
+
+	// Press 'd' -> triggers ConfirmDelete
+	g, _ = g.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("d")})
+	if !g.ConfirmDelete {
+		t.Error("expected ConfirmDelete to be true after pressing 'd'")
+	}
+
+	// Press 'y' -> triggers DeleteRowMsg
+	var cmd tea.Cmd
+	g, cmd = g.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("y")})
+	if cmd == nil {
+		t.Error("expected cmd to be returned on delete confirmation")
+	}
+	msg := cmd()
+	delMsg, ok := msg.(DeleteRowMsg)
+	if !ok {
+		t.Fatalf("expected DeleteRowMsg, got %T", msg)
+	}
+	if delMsg.RowIndex != 0 {
+		t.Errorf("expected delete row index 0, got %d", delMsg.RowIndex)
 	}
 }

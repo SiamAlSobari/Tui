@@ -139,3 +139,37 @@ func runQueryCmd(client *db.DBClient, sqlQuery string) tea.Cmd {
 		}
 	}
 }
+
+type RefreshTableMsg struct {
+	TableName string
+}
+
+func deleteRowCmd(client *db.DBClient, tableName string, headers []string, row []string) tea.Cmd {
+	return func() tea.Msg {
+		err := db.DeleteRow(client, tableName, headers, row)
+		if err != nil {
+			return components.StatusMsg{Message: "Delete failed: " + err.Error()}
+		}
+		return RefreshTableMsg{TableName: tableName}
+	}
+}
+
+func createRowCmd(client *db.DBClient, tableName string, headers []string) tea.Cmd {
+	return func() tea.Msg {
+		err := db.CreateRow(client, tableName, headers)
+		if err != nil {
+			return components.StatusMsg{Message: "Create failed: " + err.Error()}
+		}
+		return RefreshTableMsg{TableName: tableName}
+	}
+}
+
+func updateCellCmd(client *db.DBClient, tableName string, headers []string, row []string, colIndex int, newValue string) tea.Cmd {
+	return func() tea.Msg {
+		err := db.UpdateCell(client, tableName, headers, row, colIndex, newValue)
+		if err != nil {
+			return components.StatusMsg{Message: "Update failed: " + err.Error()}
+		}
+		return RefreshTableMsg{TableName: tableName}
+	}
+}

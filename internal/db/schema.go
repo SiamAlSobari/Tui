@@ -238,3 +238,137 @@ func ExecuteSQL(client *DBClient, sqlQuery string) ([]string, [][]string, error)
 		return cols, result, nil
 	}
 }
+
+func DeleteRow(client *DBClient, tableName string, headers []string, rowValues []string) error {
+	if client.ReadOnly {
+		return fmt.Errorf("database is opened in read-only mode")
+	}
+
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf(`DELETE FROM "%s" WHERE `, escapeDoubleQuotes(tableName)))
+
+	var args []interface{}
+	var conditions []string
+	for i, h := range headers {
+		if i >= len(rowValues) {
+			break
+		}
+		val := rowValues[i]
+		if val == "NULL" {
+			conditions = append(conditions, fmt.Sprintf(`"%s" IS NULL`, escapeDoubleQuotes(h)))
+		} else {
+			conditions = append(conditions, fmt.Sprintf(`"%s" = ?`, escapeDoubleQuotes(h)))
+			args = append(args, val)
+		}
+	}
+
+	if len(conditions) == 0 {
+		return fmt.Errorf("no column conditions to delete row")
+	}
+	sb.WriteString(strings.Join(conditions, " AND "))
+
+	_, err := client.DB.Exec(sb.String(), args...)
+	return err
+}
+
+func UpdateCell(client *DBClient, tableName string, headers []string, rowValues []string, colIndex int, newValue string) error {
+	if client.ReadOnly {
+		return fmt.Errorf("database is opened in read-only mode")
+	}
+	if colIndex < 0 || colIndex >= len(headers) {
+		return fmt.Errorf("invalid column index: %d", colIndex)
+	}
+
+	updateCol := headers[colIndex]
+
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf(`UPDATE "%s" SET "%s" = ? WHERE `, escapeDoubleQuotes(tableName), escapeDoubleQuotes(updateCol)))
+
+	var args []interface{}
+	args = append(args, newValue)
+
+	var conditions []string
+	for i, h := range headers {
+		if i >= len(rowValues) {
+			break
+		}
+		val := rowValues[i]
+		if val == "NULL" {
+			conditions = append(conditions, fmt.Sprintf(`"%s" IS NULL`, escapeDoubleQuotes(h)))
+		} else {
+			conditions = append(conditions, fmt.Sprintf(`"%s" = ?`, escapeDoubleQuotes(h)))
+			args = append(args, val)
+		}
+	}
+
+	if len(conditions) == 0 {
+		return fmt.Errorf("no column conditions to update row")
+	}
+	sb.WriteString(strings.Join(conditions, " AND "))
+
+	_, err := client.DB.Exec(sb.String(), args...)
+	return err
+}
+
+func CreateRow(client *DBClient, tableName string, headers []string) error {
+	if client.ReadOnly {
+		return fmt.Errorf("database is opened in read-only mode")
+	}
+	query := fmt.Sprintf(`INSERT INTO "%s" DEFAULT VALUES`, escapeDoubleQuotes(tableName))
+	_, err := client.DB.Exec(query)
+	if err == nil {
+		return nil
+	}
+
+	colsInfo, _, errSchema := GetTableSchema(client, tableName)
+	if errSchema != nil {
+		return err
+	}
+
+	var cols []string
+	var placeholders []string
+	var args []interface{}
+
+	for _, col := range colsInfo {
+		lowerType := strings.ToLower(col.Type)
+		if col.IsPK && (strings.Contains(lowerType, "int") || strings.Contains(lowerType, "key")) {
+			continue
+		}
+
+		if col.NotNull && col.DefaultVal == "" {
+			cols = append(cols, fmt.Sprintf(`"%s"`, escapeDoubleQuotes(col.Name)))
+			placeholders = append(placeholders, "?")
+			if strings.Contains(lowerType, "int") || strings.Contains(lowerType, "num") || strings.Contains(lowerType, "real") || strings.Contains(lowerType, "double") {
+				args = append(args, 0)
+			} else {
+				args = append(args, "")
+			}
+		}
+	}
+
+	if len(cols) == 0 && len(headers) > 0 {
+		cols = append(cols, fmt.Sprintf(`"%s"`, escapeDoubleQuotes(headers[0])))
+		placeholders = append(placeholders, "NULL")
+	}
+
+	if len(cols) > 0 {
+		var queryFallback string
+		if len(args) > 0 {
+			queryFallback = fmt.Sprintf(`INSERT INTO "%s" (%s) VALUES (%s)`,
+				escapeDoubleQuotes(tableName),
+				strings.Join(cols, ", "),
+				strings.Join(placeholders, ", "),
+			)
+			_, err = client.DB.Exec(queryFallback, args...)
+		} else {
+			queryFallback = fmt.Sprintf(`INSERT INTO "%s" (%s) VALUES (%s)`,
+				escapeDoubleQuotes(tableName),
+				strings.Join(cols, ", "),
+				strings.Join(placeholders, ", "),
+			)
+			_, err = client.DB.Exec(queryFallback)
+		}
+	}
+
+	return err
+}

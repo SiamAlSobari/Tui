@@ -202,6 +202,46 @@ func TestDatabase_Operations(t *testing.T) {
 	if len(execRows) != 1 || !strings.Contains(execRows[0][0], "Query executed successfully") {
 		t.Errorf("unexpected exec result: %v", execRows)
 	}
+
+	// 6. Test Write Operations: CreateRow, UpdateCell, DeleteRow
+	err = CreateRow(client, "users", []string{"id", "email", "active"})
+	if err != nil {
+		t.Fatalf("CreateRow failed: %v", err)
+	}
+
+	_, newRows, err := QueryTablePage(client, "users", 10, 0)
+	if err != nil {
+		t.Fatalf("failed to query users: %v", err)
+	}
+	if len(newRows) != 4 {
+		t.Errorf("expected 4 rows after creation, got %d", len(newRows))
+	}
+
+	err = UpdateCell(client, "users", []string{"id", "email", "active"}, newRows[2], 1, "charlie_updated@example.com")
+	if err != nil {
+		t.Fatalf("UpdateCell failed: %v", err)
+	}
+
+	_, updatedRows, err := QueryTablePage(client, "users", 10, 0)
+	if err != nil {
+		t.Fatalf("failed to query users: %v", err)
+	}
+	if updatedRows[2][1] != "charlie_updated@example.com" {
+		t.Errorf("expected updated email 'charlie_updated@example.com', got %s", updatedRows[2][1])
+	}
+
+	err = DeleteRow(client, "users", []string{"id", "email", "active"}, updatedRows[2])
+	if err != nil {
+		t.Fatalf("DeleteRow failed: %v", err)
+	}
+
+	_, finalRows, err := QueryTablePage(client, "users", 10, 0)
+	if err != nil {
+		t.Fatalf("failed to query users: %v", err)
+	}
+	if len(finalRows) != 3 {
+		t.Errorf("expected 3 rows after deletion, got %d", len(finalRows))
+	}
 }
 
 func BenchmarkDatabaseStartup(b *testing.B) {
