@@ -203,3 +203,33 @@ func TestDatabase_Operations(t *testing.T) {
 		t.Errorf("unexpected exec result: %v", execRows)
 	}
 }
+
+func BenchmarkDatabaseStartup(b *testing.B) {
+	tmpDir := b.TempDir()
+	dbFile := filepath.Join(tmpDir, "bench.db")
+
+	initDB, err := sql.Open("sqlite", dbFile)
+	if err != nil {
+		b.Fatalf("failed to init temp db: %v", err)
+	}
+	_, err = initDB.Exec("CREATE TABLE test (id INTEGER PRIMARY KEY);")
+	if err != nil {
+		initDB.Close()
+		b.Fatalf("failed to exec schema pragma: %v", err)
+	}
+	initDB.Close()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		client, err := OpenConnection(dbFile, false)
+		if err != nil {
+			b.Fatal(err)
+		}
+		_, err = ListTables(client)
+		if err != nil {
+			client.Close()
+			b.Fatal(err)
+		}
+		client.Close()
+	}
+}
