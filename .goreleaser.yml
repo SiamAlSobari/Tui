@@ -44,3 +44,20 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+
+brews:
+  - name: dbbee
+    repository:
+      owner: SiamAlSobari
+      name: homebrew-tap
+    directory: Formula
+    homepage: "https://github.com/SiamAlSobari/dbbee"
+    description: "Lightweight, CGO-free interactive SQLite terminal browser TUI in Go"
+
+scoops:
+  - name: dbbee
+    repository:
+      owner: SiamAlSobari
+      name: scoop-bucket
+    homepage: "https://github.com/SiamAlSobari/dbbee"
+    description: "Lightweight, CGO-free interactive SQLite terminal browser TUI in Go"
