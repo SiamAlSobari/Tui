@@ -60,3 +60,5 @@ Events flow through [Update](file:///C:/Koding/TUIsqlite/internal/tui/update.go#
 - **Operations Client**: Implemented in `internal/db/`:
   - `client.go`: Connection lifecycle, read-only fallbacks, and header validation.
   - `schema.go`: Table lists, schema info parser, custom query executors, cell updates, row insertion, and row deletion.
+
+
